@@ -76,12 +76,12 @@ jetpack-mod/
 - [ ] **Task 9: `runClient` boot gate (mod listed, no crash)**
 
 ### M1 — Model pipeline + item render
-- [ ] **Task 10: Copy GLB to `assets-src/` + copy `glb_analyze.py`; write `test_glb2gecko.py` (red)**
-- [ ] **Task 11: Converter skeleton `glb2gecko.py` (parse + CLI stubs)**
-- [ ] **Task 12: Converter fill: bones + poly_mesh (TRI) + pivot/rotation math (G=M)**
-- [ ] **Task 13: Converter fill: UV atlas bake (PIL)**
-- [ ] **Task 14: Converter fill: animations (seconds, euler, generated position keys) + `ModelData.java` + main()**
-- [ ] **Task 15: Run converter → resources (default flags); tests green**
+- [x] **Task 10: Copy GLB to `assets-src/` + copy `glb_analyze.py`; write `test_glb2gecko.py` (red)**
+- [x] **Task 11: Converter skeleton `glb2gecko.py` (parse + CLI stubs)**
+- [x] **Task 12: Converter fill: bones + poly_mesh (TRI) + pivot/rotation math (G=M)**
+- [x] **Task 13: Converter fill: UV atlas bake (PIL)**
+- [x] **Task 14: Converter fill: animations (seconds, euler, generated position keys) + `ModelData.java` + main()**
+- [x] **Task 15: Run converter → resources (default flags); tests green**
 - [ ] **Task 16: `PolyMeshBakedModelFactory` + `ClientSetup` + `JetpackItem`/`JetpackGeoModel`/`JetpackItemRenderer`/registration/lang/item-model**
 - [ ] **Task 17: Render gate (runClient, `/give`, in-hand + GUI vs reference, G choice)**
 
@@ -242,7 +242,7 @@ dependencies {
 
 ### Converter math — normative (G = M default)
 
-All formulas below are derived from verified GeckoLib 4.8.4 bytecode and are the single source of truth for Tasks 11–15. Units: glTF node units = Blockbench px (root scale 0.0625 converts px→blocks: 16 px = 1 block). All JSON values in **root-local px** (poly positions, pivots, position keys).
+All formulas below are derived from verified GeckoLib 4.8.4 bytecode. GLTF root coordinates are blocks; GeckoLib geometry uses model pixels. The converter seeds cumulative scale with 16, so output positions, pivots, and animation position keys use model pixels (16 px = 1 block).
 
 **Runtime ground truth (bytecode):**
 - `prepMatrixForBone` = `translate(−posX/16, posY/16, posZ/16)` → `translate(pivot/16)` (no mirror) → rotate Z then Y then X (post-multiplied: matrix `R = Rz·Ry·Rx`) → `scale(s)` → `translate(−pivot/16)`.
@@ -255,27 +255,27 @@ All formulas below are derived from verified GeckoLib 4.8.4 bytecode and are the
 `β = asin(−r20)`, `α = atan2(r21, r22)`, `γ = atan2(r10, r00)`. Unwrap each animated euler to be within ±π of the rest value before differencing.
 
 **Tree walk (pre-order), per node:**
-- `c` = product of **strict-ancestor** rest scales (scalar; assert uniform — model rule: non-uniform scales `[1,1,0.5]` occur only on childless mesh nodes; uniform animated scale `ExhaustFX` handled via keys).
+- `c` = 16 × product of **strict-ancestor** rest scales (scalar; assert uniform; root-to-model unit conversion is included).
 - `t̃ = c · t` (node translation, rest or animated value).
 - Rest quat → `(α0, β0, γ0)`; `R0 = Rz(γ0)Ry(β0)Rx(α0)`.
 - **Pivot JSON:** `p_json = (I − R0)⁻¹ · t̃` (px) — solves 3×3; when `R0 = I`, `p_json = t̃`.
 - **Rest rotation JSON (deg):** `(α0, β0, −γ0)`.
-- **Poly positions (JSON, natural px):** `v_json = (∏ all rest scales in chain, incl. own, as matrix) · v_mesh` — i.e. `c · S0_own · v_mesh`.
+- **Poly positions (JSON, model px):** `v_json = 16 × (∏ all rest scales in chain, incl. own, as matrix) · v_mesh` — i.e. `c · S0_own · v_mesh`.
 - **Normals:** transform by inverse-transpose of that matrix (identity direction for uniform scales), keep natural; factory negates X.
 - Children walk with `c_child = c · S0_own`.
 
 **Animation, per animated node, per keyframe time `t_k` (seconds, passed through unchanged):**
 - `R_k`, `S_k`, `t_k` = rotation/scale/translation at `t_k` (rest value if channel absent); `S′_k = S_k · S0⁻¹` per axis (rest = 1).
-- **Position key (absolute px):** `m(t_k) = c·t_k − (I − R_k·S′_k) · p_json`.
+- **Position key (absolute model px):** `m(t_k) = c·t_k − (I − R_k·S′_k) · p_json`.
   Emit position keys whenever `m` is not identically 0 — **required even if the glTF node has no translation channel** (fan: rotation animates with `p_json ≠ 0`; ExhaustFX/halos/tongues: scale animates with `t̃ ≠ 0`). Embers/hazes have translation channels but their values still pass through this formula (scale contribution).
 - **Rotation keys (deg):** `(deg(α_k−α0), deg(β_k−β0), −deg(γ_k−γ0))`.
 - **Scale keys:** per-axis `S′_k`.
 
-**geo.json emission:** every node → one bone (all 103 nodes qualify: mesh, animated, or ancestor-of). Unnamed glTF nodes get `node{i}` (glTF index) — deterministic, used by animation targets and `EMISSIVE_BONES`. Each bone: `pivot`, `rotation`, `children`, `cubes: []` (always — `Bone.cubes()` must not be null for Builtin), and at most one `poly_mesh`:
+**geo.json emission:** every node → one bone (all 103 nodes qualify: mesh, animated, or ancestor-of). Unnamed glTF nodes get `node{i}` (glTF index) — deterministic, used by animation targets and `EMISSIVE_BONES`. Each bone in the flat `bones` list has `name`, `pivot`, `rotation`, optional `parent`, `cubes: []` (always — `Bone.cubes()` must not be null for Builtin), and at most one `poly_mesh`:
 ```json
 "poly_mesh": {
   "normalized_uvs": true,
-  "positions": [x,y,z, ...],   // flat doubles, root-local px, natural (unmirrored)
+  "positions": [x,y,z, ...],   // flat doubles, model pixels, natural (unmirrored)
   "normals":   [x,y,z, ...],   // flat doubles, natural
   "uvs":       [u,v, ...],     // flat doubles, atlas space 0..1
   "polys":     [[[pi,ni,ui],[pi,ni,ui],[pi,ni,ui]], ...],  // triangulated, type TRI
@@ -284,7 +284,7 @@ All formulas below are derived from verified GeckoLib 4.8.4 bytecode and are the
 ```
 (Exact key spelling for `poly_mesh`/`normalized_uvs` is confirmed from the GeckoLib deserializers; triangulate quads as `(0,1,2),(0,2,3)` so the output is uniformly TRI. **Measured mesh references:** the source has 90 references to 90 distinct meshes, with one primitive per mesh; expected output totals are 21,425 vertices, 22,876 triangles, and 90 poly bones.)
 
-**Factory (Java, G = M):** poly positions are stored natural; the factory writes each `GeoVertex` as `(−x/16, y/16, z/16)` (mirror + px→blocks) and normals as `(−nx, ny, nz)`; winding follows the mirrored storage — render relies on `entityTranslucent` (no cull). One `GeoCube` per poly bone: `GeoCube(quads, Vec3.ZERO, Vec3.ZERO, new Vec3(1,1,1), 0, false)` (cube pivot/rotation identity → cube sandwich is a no-op).
+**Factory (Java, G = M):** poly positions use generated model pixels; the factory writes each `GeoVertex` as `(−x/16, y/16, z/16)` (mirror + px→blocks) and normals as `(−nx, ny, nz)`; winding follows the mirrored storage — render relies on `entityTranslucent` (no cull). One `GeoCube` per poly bone: `GeoCube(quads, Vec3.ZERO, Vec3.ZERO, new Vec3(1,1,1), 0, false)` (cube pivot/rotation identity → cube sandwich is a no-op).
 
 **G = I escape (`--flip-x`):** conjugate by `M = diag(−1,1,1)` — storage natural without factory mirror (`x/16`), pivot JSON x-negated, rest rotation `(−α0, −β0, +γ0)`, rotation keys `(−Δα, −Δβ, +Δγ)`, position keys x-negated through the same formula. Task 17's visual gate (warning-label side, nozzles, forward) picks the flag; default remains G = M (matches Builtin's own transform pattern).
 
@@ -318,14 +318,16 @@ class ConvertTest(unittest.TestCase):
 
     @classmethod
     def walk_bones(cls, bones):
-        for b in bones:
-            yield b
-            yield from cls.walk_bones(b.get("children", []))
+        yield from bones
 
     def test_geo_counts(self):
-        geo = self.load("assets/customjetpack/geo/models/jetpack.geo.json")
+        geo = self.load("src/main/resources/assets/custom_jetpack/geo/models/jetpack.geo.json")["minecraft:geometry"][0]
         bones = list(self.walk_bones(geo["bones"]))
         self.assertEqual(len(bones), 103)
+        names = {bone["name"] for bone in bones}
+        for bone in bones:
+            if "parent" in bone:
+                self.assertIn(bone["parent"], names)
         verts = poly_bones = 0
         for b in bones:
             self.assertIn("cubes", b)          # cubes: [] always present (Builtin NPE guard)
@@ -337,18 +339,21 @@ class ConvertTest(unittest.TestCase):
             self.assertEqual(set(pm), {"normalized_uvs", "positions", "normals", "uvs", "polys", "type"})
             self.assertEqual(pm["type"], "TRI")
             self.assertEqual(len(pm["positions"]) % 3, 0)
+            self.assertEqual(len(pm["positions"]) // 3, len(pm["normals"]) // 3)
+            self.assertEqual(len(pm["uvs"]) // 2, len(pm["positions"]) // 3)
+            self.assertTrue(all(0 <= uv <= 1 for uv in pm["uvs"]))
             verts += len(pm["positions"]) // 3
             for poly in pm["polys"]:
                 self.assertEqual(len(poly), 3)          # triangulated
                 for pi, ni, ui in poly:
                     self.assertGreaterEqual(pi, 0)
-        self.assertEqual(verts, 21425)   # per-node instances (90 refs); unique-mesh basis is 21425
+        self.assertEqual(verts, 21425)   # one instance for each of the 90 referenced meshes
         tris = sum(len(b["poly_mesh"]["polys"]) for b in bones if b.get("poly_mesh"))
         self.assertEqual(tris, 22876)
         self.assertEqual(poly_bones, 90)
 
     def test_animation_clips(self):
-        anim = self.load("assets/customjetpack/animations/jetpack.animation.json")
+        anim = self.load("src/main/resources/assets/custom_jetpack/animations/jetpack.animation.json")
         clips = anim["animations"]
         self.assertEqual({c.lower() for c in clips}, {"idle", "flight"})
 
@@ -381,8 +386,8 @@ class ConvertTest(unittest.TestCase):
 
         def max_time(obj, acc):
             if isinstance(obj, dict):
-                if "time" in obj and isinstance(obj["time"], (int, float)):
-                    acc[0] = max(acc[0], obj["time"])
+                if isinstance(obj.get("animation_length"), (int, float)):
+                    acc[0] = max(acc[0], obj["animation_length"])
                 for v in obj.values():
                     max_time(v, acc)
             elif isinstance(obj, list):
@@ -402,7 +407,7 @@ class ConvertTest(unittest.TestCase):
         self.assertEqual(collect_types(fan, set()), {"rotation", "position"})
 
     def test_atlas_exists(self):
-        p = self.out / "assets/customjetpack/textures/models/jetpack_atlas.png"
+        p = self.out / "src/main/resources/assets/custom_jetpack/textures/models/jetpack_atlas.png"
         self.assertTrue(p.exists() and p.stat().st_size > 0)
 
     def test_model_data(self):
@@ -421,48 +426,48 @@ Note: the clip test recursively scans for `{position,rotation,scale}` keys that 
 
 **Files:** `tools/glb2gecko.py` (new)
 
-- [ ] 11.1 Write skeleton: CLI (`argparse`: `glb_path`, `--out`, `--flip-x`, `--flip-rotation`) — both flags are **escape hatches only**; default run uses neither (G = M, see Converter math). `load_glb(path) -> (json, bin_chunks)` fully implemented (JSON chunk parse + BIN chunk); `main()` calls the four builders `build_geo`, `build_atlas`, `build_animations`, `emit_model_data` (bodies filled in Tasks 12–14; each fill is complete code for that stage). Also implement in this task: shared helpers `quat_to_matrix(q) -> 3×3`, `matrix_to_euler_zyx(R) -> (α,β,γ)` (Converter math formulas), `accumulate_scale(...)` tree walk, since every later task depends on them.
-- [ ] 11.2 Commit: `feat(tools): glb2gecko skeleton + GLB loader`
+- [x] 11.1 Write skeleton: CLI (`argparse`: `glb_path`, `--out`, `--flip-x`, `--flip-rotation`) — both flags are **escape hatches only**; default run uses neither (G = M, see Converter math). `load_glb(path) -> (json, bin_chunks)` fully implemented (JSON chunk parse + BIN chunk); `main()` calls the four builders `build_geo`, `build_atlas`, `build_animations`, `emit_model_data` (bodies filled in Tasks 12–14; each fill is complete code for that stage). Also implement in this task: shared helpers `quat_to_matrix(q) -> 3×3`, `matrix_to_euler_zyx(R) -> (α,β,γ)` (Converter math formulas), `accumulate_scale(...)` tree walk, since every later task depends on them.
+- [x] 11.2 Commit: `feat(tools): glb2gecko skeleton + GLB loader`
 
 ### Task 12: Bones, poly_mesh, pivot/rotation math
 
 **Files:** `tools/glb2gecko.py` (edit)
 
-- [ ] 12.1 Fill `build_geo` per Converter math block: pre-order walk with cumulative scale `c`; emit one bone per glTF node (all 103 qualify — mesh, animated, or ancestor-of; unnamed → `node{i}` from glTF node index); per bone: `name`, `pivot = (I−R0)⁻¹·(c·t)` (natural px; `t̃` when R0=I), `rotation = (α0, β0, −γ0)` deg, `cubes: []` always, `children`. Rest scale is NOT a bone field — bake into poly positions (`v_json = c·S0_own·v_mesh`).
-- [ ] 12.2 Fill poly emission: flatten mesh primitive triangles (componentType 5126 float positions/normals, 5125 uint / 5123 ushort indices; triangulate quads `(0,1,2),(0,2,3)`), flat `positions`/`normals` arrays, `polys` as `[[[pi,ni,ui],×3],…]`, `type: "TRI"`; UVs deferred to Task 13 but reserve `uvs` slot + per-primitive `pi,ni,ui` index alignment. No skinning (model is rigid: glTF `skins` count 0 — assert). Normals via inverse-transpose of `c·S0` (direction-identity under uniform scale; non-uniform only on childless nodes — safe).
-- [ ] 12.3 Axis rules for this task (G = M default): store positions/normals **natural** (mirror lives in the factory); quaternion→euler per Converter math; **no X negation in JSON**. `--flip-x` path: conjugate-by-M rules from Converter math block (only used if Task 17 gate fails).
-- [ ] 12.4 Commit: `feat(tools): glb2gecko bones + poly_mesh + pivot/rotation math`
+- [x] 12.1 Fill `build_geo` per Converter math block: pre-order walk with cumulative scale `c`; emit one flat-list bone per glTF node (all 103); unnamed → `node{i}`. Each bone has `name`, `pivot = (I−R0)⁻¹·(c·t)` in model pixels, `rotation = (α0, β0, −γ0)` degrees, optional `parent` name, and `cubes: []`. Rest scale is NOT a bone field — bake into poly positions (`v_json = c·S0_own·v_mesh`).
+- [x] 12.2 Fill poly emission: flatten mesh primitive triangles (componentType 5126 float positions/normals, 5125 uint / 5123 ushort indices; triangulate quads `(0,1,2),(0,2,3)`), flat `positions`/`normals` arrays, `polys` as `[[[pi,ni,ui],×3],…]`, `type: "TRI"`; UVs deferred to Task 13 but reserve `uvs` slot + per-primitive `pi,ni,ui` index alignment. No skinning (model is rigid: glTF `skins` count 0 — assert). Normals via inverse-transpose of `c·S0` (direction-identity under uniform scale; non-uniform only on childless nodes — safe).
+- [x] 12.3 Axis rules for this task (G = M default): store positions/normals **natural** (mirror lives in the factory); quaternion→euler per Converter math; **no X negation in JSON**. `--flip-x` path: conjugate-by-M rules from Converter math block (only used if Task 17 gate fails).
+- [x] 12.4 Commit: `feat(tools): glb2gecko bones + poly_mesh + pivot/rotation math`
 
 ### Task 13: Atlas bake
 
 **Files:** `tools/glb2gecko.py` (edit)
 
-- [ ] 13.1 Fill `build_atlas` with PIL: composite all 9 GLB image buffers into one power-of-two RGBA atlas (grid), record per-primitive UV offset/scale, rewrite each poly's UVs into atlas space 0..1 (clamp), `normalized_uvs: true`. Preserve NEAREST intent (integer texel alignment; note: geo json has no filter field — default linear acceptable, note only). Save `textures/models/jetpack_atlas.png` + set geo top-level `texture` path.
-- [ ] 13.2 Commit: `feat(tools): glb2gecko texture atlas (PIL)`
+- [x] 13.1 Fill `build_atlas` with PIL: pack source material textures and color factors into a power-of-two RGBA atlas; remap UVs with each GLTF sampler clamp, repeat, or mirrored-repeat mode; save the atlas under `src/main/resources/assets/custom_jetpack/textures/models/jetpack_atlas.png`. `JetpackGeoModel` provides the texture resource.
+- [x] 13.2 Commit: `feat(tools): glb2gecko texture atlas (PIL)`
 
 ### Task 14: Animations + ModelData + main()
 
 **Files:** `tools/glb2gecko.py` (edit)
 
-- [ ] 14.1 Fill `build_animations` per Converter math block:
+- [x] 14.1 Fill `build_animations` per Converter math block:
   - GLTF channels (translation/rotation/scale + samplers) → GeckoLib `animations.json` clips "Idle" and "Flight"; **keyframe times passed through in SECONDS** (GLTF times are seconds; GeckoLib expects seconds — `×20` is internal, do NOT pre-scale); `interpolation: "LINEAR"`.
   - Rotation: per-keyframe quaternion → matrix → euler `(α,β,γ)` (unwrapped ±π vs rest) → rotation keys `(deg Δα, deg Δβ, −deg Δγ)`; rest rotation JSON already `(α0,β0,−γ0)` from Task 12.
   - Position: **generate** `m(t_k) = c·t_k − (I − R_k·S′_k)·p_json` for every animated node with `p_json ≠ 0` or a translation channel — fan (rotation→position), ExhaustFX/halos/tongues (scale→position), embers/hazes (translation+scale); emit only if `m` varies or ≠ 0 (else omit channel). Rest position field stays 0.
   - Scale: per-axis keys `S′_k = S_k/S0`; only when scale channel exists (rest scale 1 default).
   - Assert: animated-rotation nodes have uniform `S0` if they have descendants (model holds: fan rest R = I; tongues rest 180°Z but scale-only).
-- [ ] 14.2 Fill `emit_model_data`: `public static final String[] EMISSIVE_BONES` — derived from GLB materials with `emissiveFactor` (report: `warning_orange` + `nozzle_glow` → nodes {21,22,31–40,44,55,73}, as **generated names** — unnamed ones become `node{i}`, converter resolves actual names from data, never hardcoded guesses); assert no node's primitive set mixes emissive/non-emissive materials (else split-fail with message). `THRUSTER_L/R` nozzle offsets from bottom-most verts of the two nozzle meshes converted through the chain (root-local px → divide by 16 for blocks; report cross-check ≈ `[0, 0.74, ±0.315]` z-sign per side). Javadoc cites report source.
-- [ ] 14.3 Fill `main()`: write geo json, animation json, atlas, `ModelData.java` (package `com.customjetpack.data`, header comment `GENERATED by tools/glb2gecko.py — do not edit`), print summary (bone count, tri count, clip names, generated-position-key count).
-- [ ] 14.4 Commit: `feat(tools): glb2gecko animations + ModelData emission`
+- [x] 14.2 Fill `emit_model_data`: `public static final String[] EMISSIVE_BONES` — derived from GLB materials with `emissiveFactor` (report: `warning_orange` + `nozzle_glow` → nodes {21,22,31–40,44,55,73}, as **generated names** — unnamed ones become `node{i}`, converter resolves actual names from data, never hardcoded guesses); assert no node's primitive set mixes emissive/non-emissive materials (else split-fail with message). `THRUSTER_L/R` offsets from the one emissive nozzle ring transformed through the hierarchy; infer the second anchor by symmetry (root-local px → divide by 16 for blocks; report cross-check ≈ `[0, 0.74, ±0.315]` z-sign per side). Javadoc cites report source.
+- [x] 14.3 Fill `main()`: write geo json, animation json, atlas, `ModelData.java` (package `com.customjetpack.data`, header comment `GENERATED by tools/glb2gecko.py — do not edit`), print summary (bone count, tri count, clip names, generated-position-key count).
+- [x] 14.4 Commit: `feat(tools): glb2gecko animations + ModelData emission`
 
 ### Task 15: Run converter + tests green
 
-- [ ] 15.1 Run (default G = M — **no `--flip-x`**):
+- [x] 15.1 Run (default G = M — **no `--flip-x`**):
 ```powershell
 python tools/glb2gecko.py assets-src/minecraft_jetpack.glb --out .
 python -m unittest tools.test_glb2gecko -v
 ```
 **Expected:** converter prints summary; unittest `OK`. If counts mismatch report → fix converter (not the test — test numbers come from independent analysis). Orientation/parity issues are decided by the Task 17 visual gate (flip flags are escape hatches, not defaults).
-- [ ] 15.2 Per-file commits: `feat(assets): generated jetpack.geo.json`, `feat(assets): generated jetpack.animation.json`, `feat(assets): generated jetpack_atlas.png`, `feat(mod): generated ModelData constants` (each file its own commit).
+- [x] 15.2 Per-file commits: `feat(assets): generated jetpack.geo.json`, `feat(assets): generated jetpack.animation.json`, `feat(assets): generated jetpack_atlas.png`, `feat(mod): generated ModelData constants` (each file its own commit).
 
 ### Task 16: Item classes + registration + poly factory
 
@@ -688,7 +693,7 @@ Logic (complete in next pass — this task's code block):
 
 ### Task 28: Particle texture + json
 
-**Files:** `tools/gen_particle_texture.py` (PIL 8×8→ upscale? MC particle textures can be small; generate 16×16 RGBA radial flame: orange core→transparent edge, NEAREST), `src/main/resources/assets/customjetpack/textures/particle/jetpack_thruster.png`, `src/main/resources/assets/customjetpack/particles/jetpack_thruster.json` `{"textures":["custom_jetpack:jetpack_thruster"]}`.
+**Files:** `tools/gen_particle_texture.py` (PIL 8×8→ upscale? MC particle textures can be small; generate 16×16 RGBA radial flame: orange core→transparent edge, NEAREST), `src/main/resources/assets/custom_jetpack/textures/particle/jetpack_thruster.png`, `src/main/resources/assets/custom_jetpack/particles/jetpack_thruster.json` `{"textures":["custom_jetpack:jetpack_thruster"]}`.
 - [ ] Commits per file: `feat(tools)`, `feat(fx): particle texture`, `feat(fx): particle json`.
 
 ### Task 29: Particle type + provider + spawn loop
@@ -698,7 +703,7 @@ Logic (complete in next pass — this task's code block):
 
 ### Task 30: Sounds synthesis
 
-**Files:** `tools/synth_sounds.sh` (ffmpeg: loop = 4s pink-noise + 70Hz sine tremolo crossfaded ends; start = 0.4s rise; stop = 0.6s decay — full script in next pass), outputs → `src/main/resources/assets/customjetpack/sounds/{jetpack_thrust_loop,jetpack_thrust_start,jetpack_thrust_stop}.ogg`, `sounds.json` (subtitle entries), `ModSounds.java` (`DeferredRegister<SoundEvent>` + 3 `SoundEvent.createVariableRangeEvent`), wire in `JetpackMod`.
+**Files:** `tools/synth_sounds.sh` (ffmpeg: loop = 4s pink-noise + 70Hz sine tremolo crossfaded ends; start = 0.4s rise; stop = 0.6s decay — full script in next pass), outputs → `src/main/resources/assets/custom_jetpack/sounds/{jetpack_thrust_loop,jetpack_thrust_start,jetpack_thrust_stop}.ogg`, `sounds.json` (subtitle entries), `ModSounds.java` (`DeferredRegister<SoundEvent>` + 3 `SoundEvent.createVariableRangeEvent`), wire in `JetpackMod`.
 - [ ] Run `bash tools/synth_sounds.sh` (ffmpeg on PATH ✓); verify files non-zero size; commit each.
 
 ### Task 31: Loop sound manager
