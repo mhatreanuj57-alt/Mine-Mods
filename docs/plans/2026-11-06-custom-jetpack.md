@@ -282,7 +282,7 @@ All formulas below are derived from verified GeckoLib 4.8.4 bytecode and are the
   "type": "TRI"
 }
 ```
-(Exact key spelling — `poly_mesh`/`normalized_uvs` — confirmed from `Bone`/`PolyMesh` deserializers; `PolysUnion` is a single global TRI|QUAD type → **triangulate all quads** `(0,1,2),(0,2,3)` so type is uniformly `TRI`. **Mesh instancing:** report meshes 67–89 are referenced by 2 nodes each (113 node→mesh refs, 90 unique meshes) — emit poly geometry per *node instance* → test totals: **24110 verts / 24536 tris** (= 21425/22876 unique-mesh basis + 2685/1660 re-instanced), poly bones = **113**.)
+(Exact key spelling for `poly_mesh`/`normalized_uvs` is confirmed from the GeckoLib deserializers; triangulate quads as `(0,1,2),(0,2,3)` so the output is uniformly TRI. **Measured mesh references:** the source has 90 references to 90 distinct meshes, with one primitive per mesh; expected output totals are 21,425 vertices, 22,876 triangles, and 90 poly bones.)
 
 **Factory (Java, G = M):** poly positions are stored natural; the factory writes each `GeoVertex` as `(−x/16, y/16, z/16)` (mirror + px→blocks) and normals as `(−nx, ny, nz)`; winding follows the mirrored storage — render relies on `entityTranslucent` (no cull). One `GeoCube` per poly bone: `GeoCube(quads, Vec3.ZERO, Vec3.ZERO, new Vec3(1,1,1), 0, false)` (cube pivot/rotation identity → cube sandwich is a no-op).
 
@@ -290,11 +290,13 @@ All formulas below are derived from verified GeckoLib 4.8.4 bytecode and are the
 
 ### Task 10: Source assets + red test
 
+**Ruling:** The source GLB contains 103 nodes, 90 mesh references, 90 distinct meshes, and 90 primitives. The earlier 113-reference count cannot be correct for 103 nodes, each of which can reference at most one mesh; use the measured GLB counts. Cost if wrong: the geometry assertions fail and may expose duplicate or missing output.
+
 **Files:** `assets-src/minecraft_jetpack.glb` (new), `tools/glb_analyze.py` (copy), `tools/test_glb2gecko.py` (new, RED)
 
 - [x] 10.1 `New-Item -ItemType Directory -Path assets-src,tools -Force`; `Copy-Item C:\Users\ADMIN\Downloads\minecraft_jetpack.glb assets-src\` ; `Copy-Item C:\Users\ADMIN\AppData\Local\Temp\opencode\glb_analyze.py tools\`
 - [x] 10.2 Verify SHA: `Get-FileHash assets-src\minecraft_jetpack.glb -Algorithm SHA256` (record in commit message).
-- [x] 10.3 Write `tools/test_glb2gecko.py` (complete code below). Counts from `glb_out\report.txt`: 103 nodes → 103 bones; **113 node→mesh refs** (90 unique meshes; meshes 67–89 double-instanced) → per-instance totals **24110 verts / 24536 tris** (unique basis 21425/22876 + instanced 2685/1660); animations Idle (1 channel: ExhaustFX scale) + Flight (41 channels incl. fan rotation). Converter runs with **default G = M** (no flags).
+- [x] 10.3 Write `tools/test_glb2gecko.py` with measured counts: 103 nodes → 103 bones; 90 nodes reference 90 distinct meshes (one primitive each); 21,425 vertices / 22,876 triangles; Idle (1 track) and Flight (41 channels including fan rotation). Use converter defaults.
 ```python
 import json, subprocess, sys, tempfile, unittest
 from pathlib import Path
@@ -340,10 +342,10 @@ class ConvertTest(unittest.TestCase):
                 self.assertEqual(len(poly), 3)          # triangulated
                 for pi, ni, ui in poly:
                     self.assertGreaterEqual(pi, 0)
-        self.assertEqual(verts, 24110)   # per-node instances (113 refs); unique-mesh basis is 21425
+        self.assertEqual(verts, 21425)   # per-node instances (90 refs); unique-mesh basis is 21425
         tris = sum(len(b["poly_mesh"]["polys"]) for b in bones if b.get("poly_mesh"))
-        self.assertEqual(tris, 24536)    # unique basis 22876 + 1660 re-instanced
-        self.assertEqual(poly_bones, 113)
+        self.assertEqual(tris, 22876)
+        self.assertEqual(poly_bones, 90)
 
     def test_animation_clips(self):
         anim = self.load("assets/customjetpack/animations/jetpack.animation.json")
@@ -756,4 +758,4 @@ Logic (complete in next pass — this task's code block):
 - [ ] Config keys/packets match spec §7/§8 exactly.
 - [ ] Converter math consistency: every Task 12–15 instruction matches the normative "Converter math (G = M)" block — pivot `(I−R0)⁻¹t̃`, rest rot `(α0,β0,−γ0)`, rot keys `(+Δα,+Δβ,−Δγ)`, position keys `m(t)=c·t−(I−RS′)p_json` (generated where needed), scale keys `S/S0`, times in seconds, `cubes: []` always, poly `type: TRI`, unnamed → `node{i}`, default run without flip flags.
 - [ ] Factory: single-bone step owned by `PolyMeshBakedModelFactory` (no `builtin.constructBone` delegation), children recursed by us, `constructCube` delegates; `ClientSetup` registers namespace `custom_jetpack` on `FMLClientSetupEvent` (Dist.CLIENT).
-- [ ] Test asserts exact counts (103 bones / 113 poly bones / 24110 verts / 24536 tris — per-node instances of 90 unique meshes) and both clips; test runs with converter defaults.
+- [ ] Test asserts exact counts (103 bones / 90 poly bones / 21425 verts / 22876 tris — per-node instances of 90 unique meshes) and both clips; test runs with converter defaults.
