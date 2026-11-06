@@ -1,5 +1,7 @@
 import json, subprocess, sys, tempfile, unittest
 from pathlib import Path
+from PIL import Image
+from tools.glb2gecko import Converter, load_glb
 
 ROOT = Path(__file__).resolve().parent.parent
 GLB = ROOT / "assets-src" / "minecraft_jetpack.glb"
@@ -18,14 +20,16 @@ class ConvertTest(unittest.TestCase):
 
     @classmethod
     def walk_bones(cls, bones):
-        for b in bones:
-            yield b
-            yield from cls.walk_bones(b.get("children", []))
+        yield from bones
 
     def test_geo_counts(self):
-        geo = self.load("assets/customjetpack/geo/models/jetpack.geo.json")
+        geo = self.load("src/main/resources/assets/custom_jetpack/geo/models/jetpack.geo.json")["minecraft:geometry"][0]
         bones = list(self.walk_bones(geo["bones"]))
         self.assertEqual(len(bones), 103)
+        names = {bone["name"] for bone in bones}
+        for bone in bones:
+            if "parent" in bone:
+                self.assertIn(bone["parent"], names)
         verts = poly_bones = 0
         for b in bones:
             self.assertIn("cubes", b)          # cubes: [] always present (Builtin NPE guard)
@@ -37,6 +41,9 @@ class ConvertTest(unittest.TestCase):
             self.assertEqual(set(pm), {"normalized_uvs", "positions", "normals", "uvs", "polys", "type"})
             self.assertEqual(pm["type"], "TRI")
             self.assertEqual(len(pm["positions"]) % 3, 0)
+            self.assertEqual(len(pm["positions"]) // 3, len(pm["normals"]) // 3)
+            self.assertEqual(len(pm["uvs"]) // 2, len(pm["positions"]) // 3)
+            self.assertTrue(all(0 <= uv <= 1 for uv in pm["uvs"]))
             verts += len(pm["positions"]) // 3
             for poly in pm["polys"]:
                 self.assertEqual(len(poly), 3)          # triangulated
@@ -48,15 +55,15 @@ class ConvertTest(unittest.TestCase):
         self.assertEqual(poly_bones, 90)
 
     def test_animation_clips(self):
-        anim = self.load("assets/customjetpack/animations/jetpack.animation.json")
+        anim = self.load("src/main/resources/assets/custom_jetpack/animations/jetpack.animation.json")
         clips = anim["animations"]
         self.assertEqual({c.lower() for c in clips}, {"idle", "flight"})
 
         def collect_types(obj, acc):
-            """Find every track key ({position,rotation,scale} objects that carry keyframes)."""
+            """Find GeckoLib bone transform tracks in standard time-keyed form."""
             if isinstance(obj, dict):
                 for k, v in obj.items():
-                    if k in ("position", "rotation", "scale") and isinstance(v, dict) and "keyframes" in v:
+                    if k in ("position", "rotation", "scale") and isinstance(v, (dict, list, int, float)):
                         acc.add(k)
                     collect_types(v, acc)
             elif isinstance(obj, list):
@@ -81,13 +88,13 @@ class ConvertTest(unittest.TestCase):
 
         def max_time(obj, acc):
             if isinstance(obj, dict):
-                if "time" in obj and isinstance(obj["time"], (int, float)):
-                    acc[0] = max(acc[0], obj["time"])
-                for v in obj.values():
-                    max_time(v, acc)
+                if isinstance(obj.get("animation_length"), (int, float)):
+                    acc[0] = max(acc[0], obj["animation_length"])
+                for value in obj.values():
+                    max_time(value, acc)
             elif isinstance(obj, list):
-                for v in obj:
-                    max_time(v, acc)
+                for value in obj:
+                    max_time(value, acc)
             return acc[0]
 
         idle = clips.get("Idle") or clips.get("idle")
@@ -100,10 +107,26 @@ class ConvertTest(unittest.TestCase):
         fan = find_bone(flight, "fan")
         self.assertIsNotNone(fan)
         self.assertEqual(collect_types(fan, set()), {"rotation", "position"})
+        rotations = [fan["rotation"][key] for key in sorted(fan["rotation"], key=float)]
+        self.assertLessEqual(max(sum((a-b)**2 for a, b in zip(rotations[i], rotations[i-1]))**0.5
+                                 for i in range(1, len(rotations))), 25)
 
     def test_atlas_exists(self):
-        p = self.out / "assets/customjetpack/textures/models/jetpack_atlas.png"
+        p = self.out / "src/main/resources/assets/custom_jetpack/textures/models/jetpack_atlas.png"
         self.assertTrue(p.exists() and p.stat().st_size > 0)
+        with Image.open(p) as atlas:
+            self.assertGreater(len(atlas.convert("RGBA").getcolors(atlas.width * atlas.height) or []), 1)
+
+    def test_texture_sampler_wrap(self):
+        gltf, binary = load_glb(GLB)
+        converter = Converter(gltf, binary, self.out)
+        converter.atlas_size = (256, 128)
+        converter.material_uv = {0: (0, 0)}
+        converter.material_wrap = {0: (33071, 33071)}
+        edge = converter.atlas_uv(0, (1, 0))
+        self.assertEqual(converter.atlas_uv(0, (1.1, -0.1)), edge)
+        converter.material_wrap[0] = (10497, 10497)
+        self.assertNotEqual(converter.atlas_uv(0, (1.1, -0.1)), edge)
 
     def test_model_data(self):
         src = (self.out / "src/main/java/com/customjetpack/data/ModelData.java").read_text()
