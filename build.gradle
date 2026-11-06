@@ -61,6 +61,8 @@ minecraft {
         // applies to all the run configs below
         configureEach {
             workingDirectory project.file('run')
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', file("$buildDir/createSrgToMcp/output.srg")
 
             // Recommended logging data for a userdev environment
             // The markers can be added/remove as needed separated by commas.
