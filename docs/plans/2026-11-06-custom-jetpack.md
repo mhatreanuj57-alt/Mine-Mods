@@ -65,14 +65,14 @@ jetpack-mod/
 ## Task list
 
 ### M0 — Scaffold + repo
-- [ ] **Task 1: Extract Forge MDK into project root** (preserve `docs/`)
-- [ ] **Task 2: Configure `gradle.properties`**
-- [ ] **Task 3: Configure `META-INF/mods.toml`**
-- [ ] **Task 4: Create `JetpackMod.java`, remove ExampleMod/Config**
-- [ ] **Task 5: Ensure `.gitignore`**
-- [ ] **Task 6: `git init` + per-file commits**
-- [ ] **Task 7: Create GitHub repo + push**
-- [ ] **Task 8: Add `build.gradle` dependencies; `gradlew build` green**
+- [x] **Task 1: Extract Forge MDK into project root** (preserve `docs/`)
+- [x] **Task 2: Configure `gradle.properties`**
+- [x] **Task 3: Configure `META-INF/mods.toml`**
+- [x] **Task 4: Create `JetpackMod.java`, remove ExampleMod/Config**
+- [x] **Task 5: Ensure `.gitignore`**
+- [x] **Task 6: `git init` + per-file commits**
+- [x] **Task 7: Create GitHub repo + push**
+- [x] **Task 8: Add `build.gradle` dependencies; `gradlew build` green**
 - [ ] **Task 9: `runClient` boot gate (mod listed, no crash)**
 
 ### M1 — Model pipeline + item render
@@ -292,9 +292,9 @@ All formulas below are derived from verified GeckoLib 4.8.4 bytecode and are the
 
 **Files:** `assets-src/minecraft_jetpack.glb` (new), `tools/glb_analyze.py` (copy), `tools/test_glb2gecko.py` (new, RED)
 
-- [ ] 10.1 `New-Item -ItemType Directory -Path assets-src,tools -Force`; `Copy-Item C:\Users\ADMIN\Downloads\minecraft_jetpack.glb assets-src\` ; `Copy-Item C:\Users\ADMIN\AppData\Local\Temp\opencode\glb_analyze.py tools\`
-- [ ] 10.2 Verify SHA: `Get-FileHash assets-src\minecraft_jetpack.glb -Algorithm SHA256` (record in commit message).
-- [ ] 10.3 Write `tools/test_glb2gecko.py` (complete code below). Counts from `glb_out\report.txt`: 103 nodes → 103 bones; **113 node→mesh refs** (90 unique meshes; meshes 67–89 double-instanced) → per-instance totals **24110 verts / 24536 tris** (unique basis 21425/22876 + instanced 2685/1660); animations Idle (1 channel: ExhaustFX scale) + Flight (41 channels incl. fan rotation). Converter runs with **default G = M** (no flags).
+- [x] 10.1 `New-Item -ItemType Directory -Path assets-src,tools -Force`; `Copy-Item C:\Users\ADMIN\Downloads\minecraft_jetpack.glb assets-src\` ; `Copy-Item C:\Users\ADMIN\AppData\Local\Temp\opencode\glb_analyze.py tools\`
+- [x] 10.2 Verify SHA: `Get-FileHash assets-src\minecraft_jetpack.glb -Algorithm SHA256` (record in commit message).
+- [x] 10.3 Write `tools/test_glb2gecko.py` (complete code below). Counts from `glb_out\report.txt`: 103 nodes → 103 bones; **113 node→mesh refs** (90 unique meshes; meshes 67–89 double-instanced) → per-instance totals **24110 verts / 24536 tris** (unique basis 21425/22876 + instanced 2685/1660); animations Idle (1 channel: ExhaustFX scale) + Flight (41 channels incl. fan rotation). Converter runs with **default G = M** (no flags).
 ```python
 import json, subprocess, sys, tempfile, unittest
 from pathlib import Path
@@ -412,8 +412,8 @@ if __name__ == "__main__":
     unittest.main()
 ```
 Note: the clip test recursively scans for `{position,rotation,scale}` keys that contain `keyframes`, so it tolerates nesting differences — but Task 14 must produce exactly the format `BakedAnimationsAdapter` parses (verify against its harvested expectations / a GeckoLib example; if the track-key spelling differs, update converter and test together, never the assertions' counts/types).
-- [ ] 10.4 Run red: `python -m unittest tools.test_glb2gecko -v` → **Expected: ImportError/FAIL (converter missing)**.
-- [ ] 10.5 Commits (per file): `chore(assets): source minecraft_jetpack.glb (sha256 …)`, `chore(tools): glb_analyze.py`, `test(tools): glb2gecko self-test (red)`
+- [x] 10.4 Run red: `python -m unittest tools.test_glb2gecko -v` → **Expected: ImportError/FAIL (converter missing)**.
+- [x] 10.5 Commits (per file): `chore(assets): source minecraft_jetpack.glb (sha256 …)`, `chore(tools): glb_analyze.py`, `test(tools): glb2gecko self-test (red)`
 
 ### Task 11: Converter skeleton
 
