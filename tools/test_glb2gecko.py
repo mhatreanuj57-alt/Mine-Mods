@@ -42,10 +42,10 @@ class ConvertTest(unittest.TestCase):
                 self.assertEqual(len(poly), 3)          # triangulated
                 for pi, ni, ui in poly:
                     self.assertGreaterEqual(pi, 0)
-        self.assertEqual(verts, 24110)   # per-node instances (113 refs); unique-mesh basis is 21425
+        self.assertEqual(verts, 21425)   # one instance of each of the 90 referenced meshes
         tris = sum(len(b["poly_mesh"]["polys"]) for b in bones if b.get("poly_mesh"))
-        self.assertEqual(tris, 24536)    # unique basis 22876 + 1660 re-instanced
-        self.assertEqual(poly_bones, 113)
+        self.assertEqual(tris, 22876)
+        self.assertEqual(poly_bones, 90)
 
     def test_animation_clips(self):
         anim = self.load("assets/customjetpack/animations/jetpack.animation.json")
