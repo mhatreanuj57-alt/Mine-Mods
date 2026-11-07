@@ -73,8 +73,8 @@ public final class PolyMeshBakedModelFactory implements BakedModelFactory {
             for (int corner = 0; corner < 3; corner++) {
                 int position = (int) polygon[corner][0];
                 int uv = (int) polygon[corner][2];
-                corners[corner] = new GeoVertex(new Vector3f((float) (-positions[3 * position] / 16),
-                        (float) (positions[3 * position + 1] / 16), (float) (positions[3 * position + 2] / 16)),
+                corners[corner] = new GeoVertex(new Vector3f((float) -positions[3 * position],
+                        (float) positions[3 * position + 1], (float) positions[3 * position + 2]),
                         (float) uvs[2 * uv], (float) uvs[2 * uv + 1]);
             }
             corners[3] = corners[2];
