@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["NNN", "DAD", " S "],
+  "key": {
+    "N": { "item": "minecraft:netherite_ingot" },
+    "D": { "item": "minecraft:crying_obsidian" },
+    "A": { "item": "minecraft:amethyst_shard" },
+    "S": { "item": "minecraft:stick" }
+  },
+  "result": { "item": "runictitan:earthshaker", "count": 1 }
+}
