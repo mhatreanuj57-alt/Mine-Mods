@@ -1,0 +1,9 @@
+{
+  "entity.transportgolem.transport_golem": "Transport Golem",
+  "item.transportgolem.seating_arrangement": "Seating Arrangement",
+  "item.transportgolem.transport_golem_spawn_egg": "Transport Golem Spawn Egg",
+  "key.categories.transportgolem": "Transport Golem",
+  "key.transportgolem.seat_driver": "Switch to Driver Seat",
+  "key.transportgolem.seat_left": "Switch to Left Passenger Seat",
+  "key.transportgolem.seat_right": "Switch to Right Passenger Seat"
+}

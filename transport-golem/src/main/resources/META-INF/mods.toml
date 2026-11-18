@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="transportgolem"
+version="${file.jarVersion}"
+displayName="Transport Golem"
+description='''
+A huge rideable iron golem with a 3-seat saddle rig, a 27-slot chest, walk and ground-smash animations.
+'''
+
+[[dependencies.transportgolem]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.transportgolem]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"
