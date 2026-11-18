@@ -12,7 +12,9 @@ public final class GolemConfig {
     public static final int SMASH_TOTAL_TICKS = 32;
     public static final int SMASH_IMPACT_TICK = 18;
     public static final int SMASH_COOLDOWN_TICKS = 30;
-    public static final int JUMP_ANIMATION_TICKS = 120;
+    public static final int JUMP_ANIMATION_TICKS = 100;
+    public static final int JUMP_ASCENT_TICKS = 20;
+    public static final double JUMP_HEIGHT = 20.0D;
     public static final double JUMP_VELOCITY = 2.0D;
 
     /** Blocks travelled per full walk cycle (two steps). Raise it if the feet look like they slide forwards. */

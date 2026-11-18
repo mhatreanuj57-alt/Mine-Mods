@@ -73,7 +73,6 @@ public class TransportGolemEntity extends IronGolem {
     public int smashTicks = -1;
     private int smashCooldown;
     private int jumpTicks = -1;
-    private boolean wasOnGround = true;
     private int ticksSinceGrounded;
     private boolean jumpUsed;
     private boolean jumpWasAirborne;
@@ -300,6 +299,11 @@ public class TransportGolemEntity extends IronGolem {
 
     @Override
     public void travel(Vec3 travelVector) {
+        if (jumpTicks >= 0) {
+            Vec3 movement = getDeltaMovement();
+            double yMovement = jumpHeightAt(jumpTicks + 1) - jumpHeightAt(jumpTicks);
+            setDeltaMovement(movement.x, yMovement, movement.z);
+        }
         LivingEntity rider = getControllingPassenger();
         if (isAlive() && isVehicle() && rider != null) {
             setYRot(rider.getYRot());
@@ -318,6 +322,9 @@ public class TransportGolemEntity extends IronGolem {
             if (isControlledByLocalInstance()) {
                 setSpeed((float) getAttributeValue(Attributes.MOVEMENT_SPEED));
                 super.travel(new Vec3(strafe, travelVector.y, forward));
+            } else if (jumpTicks >= 0 && !level().isClientSide) {
+                setDeltaMovement(0.0D, getDeltaMovement().y, 0.0D);
+                super.travel(Vec3.ZERO);
             } else {
                 setDeltaMovement(0.0D, getDeltaMovement().y, 0.0D);
             }
@@ -338,8 +345,25 @@ public class TransportGolemEntity extends IronGolem {
                 setDeltaMovement(movement.x, GolemConfig.JUMP_VELOCITY, movement.z);
                 hasImpulse = true;
             }
+            jumpTicks = 0;
+            jumpWasAirborne = false;
+            jumpLanded = false;
+            setNoGravity(true);
             if (!level().isClientSide) level().broadcastEntityEvent(this, EVENT_JUMP_START);
         }
+    }
+
+    private double jumpHeightAt(int tick) {
+        int ascent = GolemConfig.JUMP_ASCENT_TICKS;
+        if (tick <= ascent) {
+            double t = Math.max(0, tick);
+            double deceleration = 2.0D * (GolemConfig.JUMP_VELOCITY * ascent - GolemConfig.JUMP_HEIGHT)
+                    / (ascent * (ascent - 1.0D));
+            return GolemConfig.JUMP_VELOCITY * t - deceleration * t * (t - 1.0D) * 0.5D;
+        }
+        double t = Math.min(tick - ascent, GolemConfig.JUMP_ANIMATION_TICKS - ascent)
+                / (double) (GolemConfig.JUMP_ANIMATION_TICKS - ascent);
+        return GolemConfig.JUMP_HEIGHT * (1.0D - t * t);
     }
 
     // ------------------------------------------------------------------ tick / animation state
@@ -355,20 +379,19 @@ public class TransportGolemEntity extends IronGolem {
         } else {
             ticksSinceGrounded++;
         }
-        if (wasOnGround && !grounded && getDeltaMovement().y > 0.0D && smashTicks < 0) {
-            jumpTicks = 0;
-            jumpWasAirborne = false;
-            jumpLanded = false;
-        } else if (jumpTicks >= 0) {
-            jumpTicks++;
+        if (jumpTicks >= 0) {
             if (!grounded) jumpWasAirborne = true;
             else if (jumpWasAirborne && !jumpLanded) {
                 jumpLanded = true;
                 if (!level().isClientSide) level().broadcastEntityEvent(this, EVENT_JUMP_LAND);
             }
-            if (jumpLanded) jumpTicks = -1;
+            if (jumpLanded || jumpTicks >= GolemConfig.JUMP_ANIMATION_TICKS) {
+                jumpTicks = -1;
+                setNoGravity(false);
+            } else {
+                jumpTicks++;
+            }
         }
-        wasOnGround = grounded;
 
         double dx = getX() - this.xo;
         double dz = getZ() - this.zo;
@@ -444,9 +467,12 @@ public class TransportGolemEntity extends IronGolem {
             Vec3 c = getSmashCenter();
             ClientShake.trigger(c.x, c.y, c.z, level().getGameTime());
         } else if (id == EVENT_JUMP_START) {
-            jumpTicks = 0;
-            jumpWasAirborne = false;
-            jumpLanded = false;
+            if (jumpTicks < 0) {
+                jumpTicks = 0;
+                jumpWasAirborne = false;
+                jumpLanded = false;
+                setNoGravity(true);
+            }
         } else if (id == EVENT_JUMP_LAND) {
             jumpLanded = true;
         } else {
