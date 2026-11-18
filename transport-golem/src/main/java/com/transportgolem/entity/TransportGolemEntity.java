@@ -486,7 +486,7 @@ public class TransportGolemEntity extends IronGolem {
 
     private boolean canSmash(LivingEntity e) {
         if (e == this || hasPassenger(e) || e instanceof IronGolem || !e.isAlive()) return false;
-        if (e instanceof Player p) return !isPlayerCreated() && !p.isCreative() && !p.isSpectator();
+        if (e instanceof Player) return false;
         if (e instanceof Enemy || e == getTarget()) return true;
         if (e instanceof AbstractVillager) return false;
         if (e instanceof TamableAnimal t && t.isTame()) return false;
