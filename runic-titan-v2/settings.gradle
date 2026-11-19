@@ -1,7 +1,14 @@
 pluginManagement {
 	repositories {
-		maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
-		mavenCentral()
 		gradlePluginPortal()
+		maven {
+			name = 'MinecraftForge'
+			url = 'https://maven.minecraftforge.net/'
+		}
 	}
+}
+
+plugins {
+	// downloads JDK 17 automatically if you only have another version installed
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '0.7.0'
 }

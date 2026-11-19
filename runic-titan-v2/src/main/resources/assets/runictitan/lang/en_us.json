@@ -1,1 +1,5 @@
-{ "item.runictitan.earthshaker": "Runic Titan Earthshaker" }
+{
+ "item.runictitan.earthshaker": "Runic Titan Earthshaker",
+ "item.runictitan.vfx_cube": "VFX Cube",
+ "entity.runictitan.thrown_hammer": "Thrown Earthshaker"
+}

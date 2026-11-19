@@ -1,7 +1,8 @@
 package net.runictitan;
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -20,16 +21,20 @@ public final class Scheduler {
 	private Scheduler() {}
 
 	public static void init() {
-		ServerTickEvents.END_SERVER_TICK.register(server -> tick());
-		ServerLifecycleEvents.SERVER_STOPPING.register(server -> TASKS.clear());
+		MinecraftForge.EVENT_BUS.addListener(Scheduler::onServerTick);
+		MinecraftForge.EVENT_BUS.addListener(Scheduler::onServerStopping);
 	}
 
 	public static void later(int delay, Runnable action) {
 		TASKS.add(new Task(Math.max(0, delay), action));
 	}
 
-	private static void tick() {
-		if (TASKS.isEmpty()) return;
+	private static void onServerStopping(ServerStoppingEvent event) {
+		TASKS.clear();
+	}
+
+	private static void onServerTick(TickEvent.ServerTickEvent event) {
+		if (event.phase != TickEvent.Phase.END || TASKS.isEmpty()) return;
 		List<Task> due = new ArrayList<>();
 		for (Iterator<Task> it = TASKS.iterator(); it.hasNext(); ) {
 			Task t = it.next();

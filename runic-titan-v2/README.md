@@ -1,37 +1,26 @@
-# Runic Titan: Earthshaker
+# Runic Titan Earthshaker 3.0
 
-A Fabric mod for Minecraft 1.20.1 that adds the Earthshaker item and its techniques.
-
-## Requirements
-
-- Minecraft 1.20.1
-- Fabric Loader and Fabric API
-- JDK 17 or newer to build from source
+Forge mod for Minecraft 1.20.1 (Forge 47.x). Adds the Earthshaker, five techniques, and a chargeable hammer throw with a returning Loyalty enchantment.
 
 ## Build
 
-From this directory, run:
+From this directory, run in PowerShell. The build uses JDK 17; Gradle can download it if needed. If `JAVA_HOME` points to a missing folder, fix it before building:
 
-```sh
-# Windows
+```powershell
 .\gradlew.bat build
-
-# Linux or macOS
-./gradlew build
 ```
 
-The mod jar is `build/libs/runic-titan-earthshaker-2.0.0.jar`. Use that file, not the `-sources` jar.
-
-## Install
-
-Copy the mod jar into your Minecraft `mods` folder alongside Fabric API. Remove the older `runic-titan-earthshaker-3abs7wzr.jar` first if you have it installed.
+The jar is `build/libs/runictitan-3.0.0.jar`. Install it with Forge 1.20.1. This Forge build does not run on Fabric. Remove older Earthshaker jars before launching.
 
 ## Use
 
-- Give yourself the item with `/give @s runictitan:earthshaker`.
-- Right-click to cast a technique.
+Get the hammer with `/give @s runictitan:earthshaker` or craft it from the Combat tab recipe.
+
+- Right-click to use the selected technique.
 - Sneak and right-click to switch techniques.
+- Hold right-click for at least 0.4 seconds, then release to throw. A 2 second charge reaches full power; charge controls throw speed and damage (25–120).
+- Add a Loyalty book in an anvil to make the thrown hammer return.
 
-## Item model
+Techniques: Ground Smash, Meteor Strike, Gravity Well, Thunder Crash, Earthquake, and Titanic Throw.
 
-The repository includes the generated item model at `src/main/resources/assets/runictitan/models/item/earthshaker.json` and its texture at `src/main/resources/assets/runictitan/textures/item/earthshaker.png`.
+The source tunes charge duration, throw damage, and speed in `EarthshakerItem.java`. Its melee damage is configured as 85.
