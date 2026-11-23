@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ISI",
+    "IBI",
+    "ISI"
+  ],
+  "key": {
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "S": {
+      "item": "create:sturdy_sheet"
+    },
+    "B": {
+      "item": "create:blaze_burner"
+    }
+  },
+  "result": {
+    "id": "missilesnukes:light_icbm_engine_mount",
+    "count": 1
+  }
+}
