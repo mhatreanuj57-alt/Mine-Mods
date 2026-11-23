@@ -1,0 +1,39 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description='''
+Light ICBM missiles with a physics-based flight simulation: vertical launch, closed-loop guidance, dynamic engine cutoff,
+physical stage separation, warhead descent, and crater-forming impacts. Controlled with an 8-slot launch remote.
+Requires Create.
+'''
+
+# Required: NeoForge
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+# Required: Minecraft 1.21.1
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Required: Create (recipes use Create's Iron Sheet, Copper Sheet, Sturdy Sheet, Fluid Tank and Blaze Burner)
+[[dependencies.${mod_id}]]
+    modId="create"
+    type="required"
+    reason="All crafting recipes use Create items."
+    versionRange="${create_version_range}"
+    ordering="AFTER"
+    side="BOTH"
