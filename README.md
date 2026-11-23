@@ -1,5 +1,7 @@
 ﻿# Mine Mods
 
+![Missiles & Nukes](missilesnukes/docs/branding/missiles-nukes-cover.png)
+
 A collection of Minecraft mods by **Anuj Mhatre**, built for **Minecraft Java 1.21.1 / NeoForge**. Each mod lives in its own folder with full source code and, where available, a ready-to-install jar.
 
 ## Mods
