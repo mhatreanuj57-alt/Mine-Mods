@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IWI",
+    "ICI",
+    "IEI"
+  ],
+  "key": {
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "W": {
+      "item": "missilesnukes:light_icbm_warhead"
+    },
+    "C": {
+      "item": "missilesnukes:light_icbm_central_body"
+    },
+    "E": {
+      "item": "missilesnukes:light_icbm_engine_mount"
+    }
+  },
+  "result": {
+    "id": "missilesnukes:light_icbm_complete_missile",
+    "count": 1
+  }
+}
