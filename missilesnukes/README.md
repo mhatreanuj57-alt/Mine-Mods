@@ -1,5 +1,8 @@
 # Missiles & Nukes  (Minecraft Java 1.21.1 · NeoForge 21.1 · Create required)
 
+![Missiles & Nukes cover](docs/branding/missiles-nukes-cover.png)
+
+
 Two missile types built from your resource packs (**Light ICBM** and **Heavy ICBM**), with a real flight simulation,
 physical stage separation, crater-forming warheads and an 8-slot launch remote.
 
