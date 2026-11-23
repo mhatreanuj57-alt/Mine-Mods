@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ITI",
+    "IRI",
+    "IBI"
+  ],
+  "key": {
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "T": {
+      "item": "minecraft:tnt"
+    },
+    "R": {
+      "item": "minecraft:blaze_rod"
+    },
+    "B": {
+      "item": "minecraft:redstone_block"
+    }
+  },
+  "result": {
+    "id": "missilesnukes:light_icbm_warhead",
+    "count": 1
+  }
+}
