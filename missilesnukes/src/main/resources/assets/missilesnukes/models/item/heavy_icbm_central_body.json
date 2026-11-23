@@ -1,0 +1,11 @@
+{
+  "parent": "neoforge:item/default",
+  "loader": "neoforge:separate_transforms",
+  "base": { "parent": "minecraft:builtin/entity" },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": { "layer0": "missilesnukes:item/heavy_icbm_central_body" }
+    }
+  }
+}
