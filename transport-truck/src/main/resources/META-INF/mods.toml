@@ -1,0 +1,20 @@
+modLoader="javafml"
+loaderVersion="[47,48)"
+license="All Rights Reserved"
+[[mods]]
+modId="transport_truck"
+version="1.0.0"
+displayName="Transport Truck"
+description="A two-seat off-road cargo truck with articulated steering, suspension, and 54 cargo slots."
+[[dependencies.transport_truck]]
+modId="forge"
+mandatory=true
+versionRange="[47.3,48)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.transport_truck]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="BOTH"
