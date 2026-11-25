@@ -1,0 +1,22 @@
+{
+  "engine": {
+    "sounds": [
+      "transport_truck:engine"
+    ]
+  },
+  "horn": {
+    "sounds": [
+      "transport_truck:horn"
+    ]
+  },
+  "impact": {
+    "sounds": [
+      "transport_truck:impact"
+    ]
+  },
+  "door": {
+    "sounds": [
+      "transport_truck:door"
+    ]
+  }
+}
