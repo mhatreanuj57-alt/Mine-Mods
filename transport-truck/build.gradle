@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '6.0.36'
+}
+group = 'dev.transport'
+version = '1.0.0'
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+minecraft {
+    mappings channel: 'official', version: '1.20.1'
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            mods { transport_truck { source sourceSets.main } }
+        }
+        client {}
+        server { args '--nogui' }
+        gameTestServer { property 'forge.enabledGameTestNamespaces', 'transport_truck' }
+    }
+}
+dependencies { minecraft 'net.minecraftforge:forge:1.20.1-47.3.0' }
+jar.finalizedBy 'reobfJar'
