@@ -1,0 +1,18 @@
+{
+  "item.transport_truck.truck": "Transport Truck",
+  "entity.transport_truck.truck": "Transport Truck",
+  "itemGroup.transport_truck": "Transport Truck",
+  "category.transport_truck": "Transport Truck",
+  "container.transport_truck.cargo": "Truck cargo",
+  "key.transport_truck.accelerate": "Accelerate",
+  "key.transport_truck.reverse": "Brake / reverse",
+  "key.transport_truck.left": "Steer left",
+  "key.transport_truck.right": "Steer right",
+  "key.transport_truck.brake": "Handbrake",
+  "key.transport_truck.horn": "Horn",
+  "key.transport_truck.cargo": "Open cargo",
+  "key.transport_truck.wings": "Fold side wings",
+  "key.transport_truck.hood": "Open hood",
+  "key.transport_truck.left_door": "Open driver door",
+  "key.transport_truck.right_door": "Open passenger door"
+}
